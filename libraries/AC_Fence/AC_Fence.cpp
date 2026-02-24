@@ -14,6 +14,7 @@
 #include <AP_HAL/AP_HAL.h>
 #include <AP_Logger/AP_Logger.h>
 #include <GCS_MAVLink/GCS.h>
+#include <StorageManager/StorageManager.h>
 
 extern const AP_HAL::HAL& hal;
 
@@ -480,6 +481,13 @@ bool AC_Fence::pre_arm_check(char *failure_msg, const uint8_t failure_msg_len) c
     if ((!enabled() && !_auto_enabled) || !_configured_fences) {
         return true;
     }
+
+#if AP_SDCARD_STORAGE_ENABLED
+    if (failed_sdcard_storage() || StorageManager::storage_failed()) {
+        hal.util->snprintf(failure_msg, failure_msg_len, "Failed to open fence storage");
+        return false;
+    }
+#endif
 
     // if we have horizontal limits enabled, check we can get a
     // relative position from the AHRS
