@@ -11,6 +11,7 @@
 #if !AC_FENCE_DUMMY_METHODS_ENABLED
 
 #include <AP_AHRS/AP_AHRS.h>
+#include <AP_GPS/AP_GPS.h>
 #include <AP_HAL/AP_HAL.h>
 #include <AP_Logger/AP_Logger.h>
 #include <GCS_MAVLink/GCS.h>
@@ -487,7 +488,11 @@ bool AC_Fence::pre_arm_check(char *failure_msg, const uint8_t failure_msg_len) c
         (_configured_fences & AC_FENCE_TYPE_POLYGON)) {
         Vector2f position;
         if (!AP::ahrs().get_relative_position_NE_home(position)) {
-            hal.util->snprintf(failure_msg, failure_msg_len, "Fence requires position");
+            if (AP::gps().status() < AP_GPS::GPS_OK_FIX_3D) {
+                hal.util->snprintf(failure_msg, failure_msg_len, "Fence enabled, need 3D Fix");
+            } else {
+                hal.util->snprintf(failure_msg, failure_msg_len, "Fence requires position");
+            }
             return false;
         }
     }
